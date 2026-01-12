@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material3.Card
@@ -41,13 +42,14 @@ import com.example.movieapp.ui.theme.MovieBlue
 @Composable
 fun MovieCard(
     movie: Movie,
+    isFavorite: Boolean = false,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
-){
+) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable{ onClick() },
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -58,19 +60,31 @@ fun MovieCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
-        ){
+        ) {
             //poster image
             Box(
                 modifier = Modifier
-                    .size(100.dp,150.dp)
+                    .size(100.dp, 150.dp)
                     .clip(RoundedCornerShape(8.dp))
-            ){
+            ) {
                 AsyncImage(
                     model = "https://image.tmdb.org/t/p/w500${movie.posterPath}",
                     contentDescription = "Poster for ${movie.title}",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                if (isFavorite){
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "Favorite",
+                        tint = Color.Red,
+                        modifier = Modifier
+                            .align ( Alignment.TopEnd )
+                            .padding(6.dp)
+                            .size(16.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -121,6 +135,7 @@ fun MovieCard(
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                 )
+
             }
         }
     }
@@ -131,7 +146,7 @@ fun RatingBar(
     rating: Double,
     maxRating: Int = 10,
     modifier: Modifier = Modifier
-){
+) {
     Row(modifier = Modifier) {
         repeat(5) { index ->
             val filled = rating >= ((index + 1) * 2)
@@ -147,7 +162,7 @@ fun RatingBar(
 
 @Preview(showBackground = true)
 @Composable
-fun MovieCardPreview(){
+fun MovieCardPreview() {
     MovieAppTheme {
         MovieCard(
             movie = MovieData.sampleMovies[0],
@@ -158,7 +173,7 @@ fun MovieCardPreview(){
 
 @Preview(showBackground = true)
 @Composable
-fun RatingBarPreview(){
+fun RatingBarPreview() {
     MovieAppTheme {
         RatingBar(rating = 7.5)
     }
