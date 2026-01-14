@@ -15,6 +15,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.movieapp.ui.screens.HomeScreen
 import com.example.movieapp.ui.theme.MovieAppTheme
 import androidx.compose.material3.MaterialTheme
+import com.example.movieapp.ui.navigation.MovieNavHost
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,15 +24,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MovieAppTheme {
+                //warna status bar
+                val systemUiController = rememberSystemUiController()
+                systemUiController.setStatusBarColor(
+                    color = MaterialTheme.colorScheme.primary
+                )
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    HomeScreen(
-                        onMovieClick = { movieId ->
-                            println("Movie clicked: $movieId")
-                        }
-                    )
+                    MovieNavHost()
                 }
             }
         }

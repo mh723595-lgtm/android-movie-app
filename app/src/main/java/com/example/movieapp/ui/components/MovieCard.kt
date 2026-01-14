@@ -15,11 +15,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +46,7 @@ fun MovieCard(
     movie: Movie,
     isFavorite: Boolean = false,
     onClick: () -> Unit = {},
+    onFavoriteClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -56,6 +59,20 @@ fun MovieCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
+
+        IconButton(
+            onClick = onFavoriteClick,
+            modifier = Modifier
+                .align(Alignment.TopEnd as Alignment.Horizontal)
+                .padding(8.dp)
+        ) {
+            Icon(
+                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()

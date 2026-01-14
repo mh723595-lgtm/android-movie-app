@@ -28,14 +28,20 @@ import com.example.movieapp.ui.components.MovieCard
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.movieapp.ui.theme.MovieBlue
 import kotlinx.coroutines.delay
 
@@ -44,22 +50,15 @@ import kotlinx.coroutines.delay
 @Composable
 fun HomeScreen(
     onMovieClick: (Int) -> Unit = {},
-    modifier: Modifier = Modifier
-){
-    var searchQuery by remember { mutableStateOf("") }
-    var isLoading by remember{mutableStateOf(true)}
-    val filteredMovies = MovieData.sampleMovies.filter{
-        it.title.contains(searchQuery, ignoreCase = true)
-    }
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = viewModel()
 
-    LaunchedEffect(Unit) {
-        delay(2000)
-        isLoading = false
-    }
-    if (isLoading){
-        LoadingIndicator()
-        return
-    }
+){
+    val movies = viewModel.filteredMovies
+    val searchQuery = viewModel.searchQuery
+    val isLoading = viewModel.isLoading
+    val error = viewModel.error
+    val favoriteMovieIds = viewModel.favoriteMovieIds
 
     Scaffold(
         modifier = modifier,
@@ -91,55 +90,85 @@ fun HomeScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Welcome to Movie App",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                //Search Bar
+                var localSearchQuery by remember { mutableStateOf(searchQuery) }
+                var focusRequester = remember { FocusRequester() }
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Discover amazing movies",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
-
-            //Search
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
-            ) {
                 OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = {searchQuery = it},
-                    modifier = Modifier.fillMaxWidth(),
+                    value = localSearchQuery,
+                    onValueChange = { newValue ->
+                        localSearchQuery = newValue
+                        viewModel.updateSearchQuery(newValue)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .focusRequester(focusRequester),
                     placeholder = {Text("Search Movie")},
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Search") },
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
                 )
-            }
 
-            //Movie List
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                items(filteredMovies) { movie ->
-                    MovieCard(
-                        movie = movie,
-                        onClick = {onMovieClick(movie.id)},
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Content berdasarkan state
+                when {
+                    isLoading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MovieBlue)
+                        }
+                    }
+
+                    error != null -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "Error",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = error ?: "Unknown error",
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+
+                    movies.isEmpty() -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = if (searchQuery.isBlank()) "No movies found" else "No results for \"$searchQuery\"",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            items(movies) { movie ->
+                                val isFavorite = favoriteMovieIds.contains(movie.id)
+                                MovieCard(
+                                    movie = movie,
+                                    isFavorite = isFavorite,
+                                    onClick = { onMovieClick(movie.id) },
+                                    onFavoriteClick = { viewModel.toggleFavorite(movie.id) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
@@ -149,14 +178,3 @@ fun HomeScreenPreview(){
     }
 }
 
-@Composable
-fun LoadingIndicator(){
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ){
-        CircularProgressIndicator(
-            color = MovieBlue
-        )
-    }
-}
